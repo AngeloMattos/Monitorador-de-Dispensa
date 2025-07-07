@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8), // Bordas ligeiramente menos arredondadas
+            borderRadius: BorderRadius.circular(8),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
@@ -47,28 +47,28 @@ class MyApp extends StatelessWidget {
           ),
           labelStyle: TextStyle(color: Colors.teal[800]),
           hintStyle: TextStyle(color: Colors.grey[500]),
-          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12), // Padding menor
+          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.teal,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8), // Botões ligeiramente menos arredondados
+              borderRadius: BorderRadius.circular(8),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Padding menor
-            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold), // Fonte um pouco menor
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
           ),
         ),
         cardTheme: CardThemeData(
-          elevation: 3, // Sombra mais sutil
+          elevation: 3,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10), // Cartões menos arredondados
+            borderRadius: BorderRadius.circular(10),
           ),
-          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4), // Margem reduzida
+          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         ),
         listTileTheme: ListTileThemeData(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Padding reduzido
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
         snackBarTheme: SnackBarThemeData(
@@ -153,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _useCategory = false;
   bool _useLocation = false;
+  bool _showFilterOptions = false; // NOVA VARIÁVEL DE ESTADO
 
   String? _selectedCategoryFilter;
   String? _selectedLocationFilter;
@@ -424,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(12.0), // Padding geral reduzido
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
             // Campos de entrada de novo produto
@@ -432,7 +433,7 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: nomeController,
               decoration: const InputDecoration(
                 labelText: 'Nome do Produto',
-                prefixIcon: Icon(Icons.shopping_basket, size: 20), // Ícone menor
+                prefixIcon: Icon(Icons.shopping_basket, size: 20),
               ),
             ),
             const SizedBox(height: 12),
@@ -443,7 +444,7 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: const InputDecoration(
                 labelText: 'Data de Validade',
                 hintText: 'Toque para selecionar a data',
-                prefixIcon: Icon(Icons.calendar_today, size: 20), // Ícone menor
+                prefixIcon: Icon(Icons.calendar_today, size: 20),
               ),
             ),
             const SizedBox(height: 12),
@@ -452,14 +453,14 @@ class _HomeScreenState extends State<HomeScreen> {
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Quantidade',
-                prefixIcon: Icon(Icons.format_list_numbered, size: 20), // Ícone menor
+                prefixIcon: Icon(Icons.format_list_numbered, size: 20),
               ),
             ),
             const SizedBox(height: 16),
 
             // Switches para Categoria e Local
             SwitchListTile(
-              title: const Text('Adicionar Categoria (Opcional)', style: TextStyle(fontSize: 14)), // Fonte menor
+              title: const Text('Adicionar Categoria (Opcional)', style: TextStyle(fontSize: 14)),
               value: _useCategory,
               onChanged: (bool value) {
                 setState(() {
@@ -471,11 +472,11 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               activeColor: Theme.of(context).primaryColor,
               contentPadding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact, // Reduz o tamanho visual
+              visualDensity: VisualDensity.compact,
             ),
             if (_useCategory)
               Padding(
-                padding: const EdgeInsets.only(bottom: 12.0), // Padding reduzido
+                padding: const EdgeInsets.only(bottom: 12.0),
                 child: TextField(
                   controller: categoriaController,
                   decoration: const InputDecoration(
@@ -487,7 +488,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
             SwitchListTile(
-              title: const Text('Adicionar Local (Opcional)', style: TextStyle(fontSize: 14)), // Fonte menor
+              title: const Text('Adicionar Local (Opcional)', style: TextStyle(fontSize: 14)),
               value: _useLocation,
               onChanged: (bool value) {
                 setState(() {
@@ -499,11 +500,11 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               activeColor: Theme.of(context).primaryColor,
               contentPadding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact, // Reduz o tamanho visual
+              visualDensity: VisualDensity.compact,
             ),
             if (_useLocation)
               Padding(
-                padding: const EdgeInsets.only(bottom: 16.0), // Padding reduzido
+                padding: const EdgeInsets.only(bottom: 16.0),
                 child: TextField(
                   controller: localArmazenamentoController,
                   decoration: const InputDecoration(
@@ -516,132 +517,162 @@ class _HomeScreenState extends State<HomeScreen> {
 
             ElevatedButton.icon(
               onPressed: adicionarProduto,
-              icon: const Icon(Icons.add_shopping_cart, size: 20), // Ícone menor
+              icon: const Icon(Icons.add_shopping_cart, size: 20),
               label: const Text('Adicionar Produto'),
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(45), // Altura do botão reduzida
+                minimumSize: const Size.fromHeight(45),
               ),
             ),
-            const SizedBox(height: 25), // Espaçamento reduzido
+            const SizedBox(height: 25),
 
-            // BARRA DE PESQUISA
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Pesquisar Produto',
-                hintText: 'Digite o nome do produto',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                  icon: const Icon(Icons.clear, size: 20),
-                  onPressed: () {
-                    _searchController.clear();
-                    _applyFilters();
-                  },
-                )
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // FILTROS (Status, Categoria, Local) - Agrupados
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Wrap( // Usando Wrap para que os filtros quebrem linha se não houver espaço
-                spacing: 8.0, // Espaço horizontal entre os chips/botões
-                runSpacing: 8.0, // Espaço vertical entre as linhas de chips/botões
-                children: [
-                  SegmentedButton<ProductFilter>(
-                    segments: const <ButtonSegment<ProductFilter>>[
-                      ButtonSegment<ProductFilter>(
-                        value: ProductFilter.all,
-                        label: Text('Todos', style: TextStyle(fontSize: 12)),
-                        icon: Icon(Icons.list, size: 16),
-                      ),
-                      ButtonSegment<ProductFilter>(
-                        value: ProductFilter.nearExpiration,
-                        label: Text('Vence em Breve', style: TextStyle(fontSize: 12)),
-                        icon: Icon(Icons.warning_amber, size: 16),
-                      ),
-                      ButtonSegment<ProductFilter>(
-                        value: ProductFilter.expired,
-                        label: Text('Vencidos', style: TextStyle(fontSize: 12)),
-                        icon: Icon(Icons.dangerous, size: 16),
-                      ),
-                    ],
-                    selected: <ProductFilter>{_selectedFilter},
-                    onSelectionChanged: (Set<ProductFilter> newSelection) {
-                      setState(() {
-                        _selectedFilter = newSelection.first;
-                        _applyFilters();
-                      });
-                    },
-                    style: SegmentedButton.styleFrom(
-                      foregroundColor: Colors.teal[800],
-                      selectedForegroundColor: Colors.white,
-                      selectedBackgroundColor: Colors.teal,
-                      side: BorderSide(color: Colors.teal.shade200),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), // Menos arredondado
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Padding menor
-                    ),
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: _selectedCategoryFilter ?? 'Todos',
-                    decoration: const InputDecoration(
-                      labelText: 'Categoria', // Label mais conciso
-                      prefixIcon: Icon(Icons.category, size: 20),
-                      contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12), // Ajuste o padding
-                    ),
-                    items: _uniqueCategories.map((String category) {
-                      return DropdownMenuItem<String>(
-                        value: category,
-                        child: Text(category, style: const TextStyle(fontSize: 14)), // Fonte menor
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedCategoryFilter = newValue;
-                        _applyFilters();
-                      });
-                    },
-                    isDense: true, // Torna o dropdown mais compacto
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: _selectedLocationFilter ?? 'Todos',
-                    decoration: const InputDecoration(
-                      labelText: 'Local', // Label mais conciso
-                      prefixIcon: Icon(Icons.location_on, size: 20),
-                      contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12), // Ajuste o padding
-                    ),
-                    items: _uniqueLocations.map((String location) {
-                      return DropdownMenuItem<String>(
-                        value: location,
-                        child: Text(location, style: const TextStyle(fontSize: 14)), // Fonte menor
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedLocationFilter = newValue;
-                        _applyFilters();
-                      });
-                    },
-                    isDense: true, // Torna o dropdown mais compacto
-                  ),
-                ],
+            // NOVO: BOTÃO PARA EXIBIR/ESCONDER FILTROS
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _showFilterOptions = !_showFilterOptions;
+                });
+              },
+              icon: Icon(_showFilterOptions ? Icons.filter_alt_off : Icons.filter_alt, size: 20),
+              label: Text(_showFilterOptions ? 'Esconder Filtros' : 'Mostrar Opções de Filtro'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(45),
+                backgroundColor: Theme.of(context).colorScheme.secondary, // Cor de destaque
+                foregroundColor: Colors.white,
               ),
             ),
             const SizedBox(height: 20),
 
+            // FILTROS: AGORA CONDICIONALMENTE VISÍVEIS
+            Visibility(
+              visible: _showFilterOptions,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      labelText: 'Pesquisar Produto',
+                      hintText: 'Digite o nome do produto',
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        onPressed: () {
+                          _searchController.clear();
+                          _applyFilters();
+                        },
+                      )
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: [
+                        SegmentedButton<ProductFilter>(
+                          segments: const <ButtonSegment<ProductFilter>>[
+                            ButtonSegment<ProductFilter>(
+                              value: ProductFilter.all,
+                              label: Text('Todos', style: TextStyle(fontSize: 12)),
+                              icon: Icon(Icons.list, size: 16),
+                            ),
+                            ButtonSegment<ProductFilter>(
+                              value: ProductFilter.nearExpiration,
+                              label: Text('Vence em Breve', style: TextStyle(fontSize: 12)),
+                              icon: Icon(Icons.warning_amber, size: 16),
+                            ),
+                            ButtonSegment<ProductFilter>(
+                              value: ProductFilter.expired,
+                              label: Text('Vencidos', style: TextStyle(fontSize: 12)),
+                              icon: Icon(Icons.dangerous, size: 16),
+                            ),
+                          ],
+                          selected: <ProductFilter>{_selectedFilter},
+                          onSelectionChanged: (Set<ProductFilter> newSelection) {
+                            setState(() {
+                              _selectedFilter = newSelection.first;
+                              _applyFilters();
+                            });
+                          },
+                          style: SegmentedButton.styleFrom(
+                            foregroundColor: Colors.teal[800],
+                            selectedForegroundColor: Colors.white,
+                            selectedBackgroundColor: Colors.teal,
+                            side: BorderSide(color: Colors.teal.shade200),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          ),
+                        ),
+                        // Dropdown para Categoria
+                        ConstrainedBox( // Limita a largura do dropdown
+                          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width / 2 - 20), // Ajuste conforme necessário
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedCategoryFilter ?? 'Todos',
+                            decoration: const InputDecoration(
+                              labelText: 'Categoria',
+                              prefixIcon: Icon(Icons.category, size: 20),
+                              contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                            ),
+                            items: _uniqueCategories.map((String category) {
+                              return DropdownMenuItem<String>(
+                                value: category,
+                                child: Text(category, style: const TextStyle(fontSize: 14)),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedCategoryFilter = newValue;
+                                _applyFilters();
+                              });
+                            },
+                            isDense: true,
+                          ),
+                        ),
+                        // Dropdown para Local de Armazenamento
+                        ConstrainedBox( // Limita a largura do dropdown
+                          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width / 2 - 20), // Ajuste conforme necessário
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedLocationFilter ?? 'Todos',
+                            decoration: const InputDecoration(
+                              labelText: 'Local',
+                              prefixIcon: Icon(Icons.location_on, size: 20),
+                              contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                            ),
+                            items: _uniqueLocations.map((String location) {
+                              return DropdownMenuItem<String>(
+                                value: location,
+                                child: Text(location, style: const TextStyle(fontSize: 14)),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedLocationFilter = newValue;
+                                _applyFilters();
+                              });
+                            },
+                            isDense: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20), // Espaçamento após os filtros quando visíveis
+                ],
+              ),
+            ),
+
             const Text(
               'Meus Produtos na Despensa',
               style: TextStyle(
-                fontSize: 20, // Fonte um pouco menor
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.teal,
                 letterSpacing: 0.8,
               ),
             ),
-            const SizedBox(height: 15), // Espaçamento reduzido
+            const SizedBox(height: 15),
             Expanded(
               child: _filteredProdutos.isEmpty
                   ? Center(
@@ -654,7 +685,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           (_selectedLocationFilter == null || _selectedLocationFilter == 'Todos')
                           ? Icons.inbox_outlined
                           : Icons.search_off,
-                      size: 70, // Ícone menor
+                      size: 70,
                       color: Colors.grey[400],
                     ),
                     const SizedBox(height: 12),
@@ -664,7 +695,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           (_selectedLocationFilter == null || _selectedLocationFilter == 'Todos')
                           ? 'Sua despensa está vazia!\nAdicione alguns produtos para começar.'
                           : 'Nenhum produto encontrado com os filtros selecionados.',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]), // Fonte menor
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -693,10 +724,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Card(
                     color: cardColor,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0), // Padding bem reduzido
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
                       child: ListTile(
                         leading: Container(
-                          padding: const EdgeInsets.all(6), // Padding reduzido
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: Colors.teal[200],
                             shape: BoxShape.circle,
@@ -706,7 +737,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                               color: Colors.teal[900],
                               fontWeight: FontWeight.bold,
-                              fontSize: 16, // Fonte menor
+                              fontSize: 16,
                             ),
                           ),
                         ),
@@ -714,7 +745,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           produto.nome,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 16, // Título menor
+                            fontSize: 16,
                             color: Colors.teal[900],
                             decoration: produto.isExpired ? TextDecoration.lineThrough : null,
                             decorationThickness: 2,
@@ -723,30 +754,30 @@ class _HomeScreenState extends State<HomeScreen> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 2), // Espaçamento menor
+                            const SizedBox(height: 2),
                             Text(
                               'Validade: ${formatarData(produto.validade)}',
-                              style: TextStyle(color: Colors.grey[700], fontSize: 12), // Fonte menor
+                              style: TextStyle(color: Colors.grey[700], fontSize: 12),
                             ),
                             if (produto.categoria != null && produto.categoria!.isNotEmpty)
                               Text(
                                 'Categoria: ${produto.categoria}',
-                                style: TextStyle(color: Colors.grey[600], fontSize: 11), // Fonte ainda menor
+                                style: TextStyle(color: Colors.grey[600], fontSize: 11),
                               ),
                             if (produto.localArmazenamento != null && produto.localArmazenamento!.isNotEmpty)
                               Text(
                                 'Local: ${produto.localArmazenamento}',
-                                style: TextStyle(color: Colors.grey[600], fontSize: 11), // Fonte ainda menor
+                                style: TextStyle(color: Colors.grey[600], fontSize: 11),
                               ),
                             if (statusText.isNotEmpty)
                               Padding(
-                                padding: const EdgeInsets.only(top: 3.0), // Padding menor
+                                padding: const EdgeInsets.only(top: 3.0),
                                 child: Text(
                                   statusText,
                                   style: TextStyle(
                                     color: statusTextColor,
                                     fontWeight: FontWeight.w800,
-                                    fontSize: 12, // Fonte menor
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
@@ -756,12 +787,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: Icon(Icons.add_circle, color: Colors.teal[600], size: 26), // Ícone menor
+                              icon: Icon(Icons.add_circle, color: Colors.teal[600], size: 26),
                               onPressed: () => adicionarUnidade(index),
                               tooltip: 'Adicionar 1 unidade',
                             ),
                             IconButton(
-                              icon: Icon(Icons.remove_circle, color: Colors.red[600], size: 26), // Ícone menor
+                              icon: Icon(Icons.remove_circle, color: Colors.red[600], size: 26),
                               onPressed: () => darBaixaProduto(index),
                               tooltip: 'Remover 1 unidade ou produto',
                             ),
