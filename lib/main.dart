@@ -5,6 +5,13 @@ import 'dart:convert'; // Necessário para codificação/decodificação JSON
 
 void main() => runApp(const MyApp());
 
+// Enum para os tipos de filtro de produto
+enum ProductFilter {
+  all,
+  expired,
+  nearExpiration,
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -127,10 +134,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<Produto> produtos = [];
+  List<Produto> _filteredProdutos = []; // Nova lista para produtos filtrados
 
   final TextEditingController nomeController = TextEditingController();
   final TextEditingController validadeController = TextEditingController();
   final TextEditingController quantidadeController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController(); // Controlador para a barra de pesquisa
+
+  ProductFilter _selectedFilter = ProductFilter.all; // Estado do filtro selecionado
 
   // Inicializa SharedPreferences
   late SharedPreferences _prefs;
@@ -139,6 +150,18 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initSharedPreferences();
+    // Adiciona um listener ao controlador de pesquisa para filtrar produtos em tempo real
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    nomeController.dispose();
+    validadeController.dispose();
+    quantidadeController.dispose();
+    super.dispose();
   }
 
   Future<void> _initSharedPreferences() async {
@@ -153,8 +176,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final List<dynamic> jsonList = json.decode(produtosJsonString);
       setState(() {
         produtos = jsonList.map((jsonItem) => Produto.fromJson(jsonItem)).toList();
-        // Ordena os produtos: vencidos primeiro, depois perto do vencimento, depois por data de validade
-        _sortProdutos();
+        _sortProdutos(); // Ordena após carregar
+        _applyFilters(); // Aplica os filtros e pesquisa após carregar
       });
     }
   }
@@ -179,6 +202,36 @@ class _HomeScreenState extends State<HomeScreen> {
       // Caso contrário, ordena por data de validade (mais antiga primeiro)
       return a.validade.compareTo(b.validade);
     });
+  }
+
+  // Lógica central para aplicar filtros e pesquisa
+  void _applyFilters() {
+    List<Produto> tempFilteredList = produtos;
+
+    // 1. Aplica o filtro de pesquisa por nome
+    final String query = _searchController.text.toLowerCase();
+    if (query.isNotEmpty) {
+      tempFilteredList = tempFilteredList
+          .where((produto) => produto.nome.toLowerCase().contains(query))
+          .toList();
+    }
+
+    // 2. Aplica o filtro de status (Vencido, Perto do Vencimento)
+    if (_selectedFilter == ProductFilter.expired) {
+      tempFilteredList = tempFilteredList.where((produto) => produto.isExpired).toList();
+    } else if (_selectedFilter == ProductFilter.nearExpiration) {
+      tempFilteredList = tempFilteredList.where((produto) => produto.pertoDoVencimento).toList();
+    }
+    // Se _selectedFilter for ProductFilter.all, nenhuma filtragem adicional é feita aqui
+
+    setState(() {
+      _filteredProdutos = tempFilteredList;
+    });
+  }
+
+  // Chamado quando o texto da pesquisa muda
+  void _onSearchChanged() {
+    _applyFilters(); // Chama a função central de aplicação de filtros
   }
 
   // Função para exibir uma mensagem SnackBar
@@ -245,6 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
       produtos.add(Produto(nome: nome, validade: validade, quantidade: quantidade));
       _sortProdutos(); // Ordena após adicionar
       _saveProdutos(); // Salva após adicionar
+      _applyFilters(); // Atualiza a lista filtrada e pesquisada
     });
 
     nomeController.clear();
@@ -254,36 +308,49 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void darBaixaProduto(int index) {
-    final String productName = produtos[index].nome;
-    setState(() {
-      if (produtos[index].quantidade > 1) {
-        produtos[index].quantidade--;
-        _showSnackBar('Uma unidade de "$productName" foi removida.');
-      } else {
-        produtos.removeAt(index);
-        _showSnackBar('"$productName" foi removido da despensa.',
-            action: SnackBarAction(
-              label: 'Desfazer',
-              onPressed: () {
-                setState(() {
-                  // Isso é um "desfazer" básico. Para um "desfazer" mais complexo, armazene o produto removido.
-                  _loadProdutos(); // Recarrega para reverter se necessário.
-                });
-              },
-            ));
-      }
-      _sortProdutos(); // Ordena após a modificação
-      _saveProdutos(); // Salva após a alteração da quantidade
-    });
+    // Encontrar o produto na lista original 'produtos' usando o produto filtrado
+    final Produto produtoRemovido = _filteredProdutos[index];
+    final int originalIndex = produtos.indexOf(produtoRemovido);
+
+    if (originalIndex != -1) { // Verifica se o produto ainda existe na lista original
+      setState(() {
+        if (produtos[originalIndex].quantidade > 1) {
+          produtos[originalIndex].quantidade--;
+          _showSnackBar('Uma unidade de "${produtos[originalIndex].nome}" foi removida.');
+        } else {
+          produtos.removeAt(originalIndex);
+          _showSnackBar('"${produtoRemovido.nome}" foi removido da despensa.',
+              action: SnackBarAction(
+                label: 'Desfazer',
+                onPressed: () {
+                  setState(() {
+                    _loadProdutos(); // Recarrega para reverter se necessário.
+                    // _applyFilters() já é chamado dentro de _loadProdutos
+                  });
+                },
+              ));
+        }
+        _sortProdutos(); // Ordena após a modificação
+        _saveProdutos(); // Salva após a alteração da quantidade
+        _applyFilters(); // Refiltrar e pesquisar após a modificação
+      });
+    }
   }
 
   void adicionarUnidade(int index) {
-    setState(() {
-      produtos[index].quantidade++;
-      _sortProdutos(); // Ordena após a modificação
-      _saveProdutos(); // Salva após a alteração da quantidade
-      _showSnackBar('Uma unidade de "${produtos[index].nome}" foi adicionada.');
-    });
+    // Encontrar o produto na lista original 'produtos' usando o produto filtrado
+    final Produto produtoAdicionado = _filteredProdutos[index];
+    final int originalIndex = produtos.indexOf(produtoAdicionado);
+
+    if (originalIndex != -1) {
+      setState(() {
+        produtos[originalIndex].quantidade++;
+        _sortProdutos(); // Ordena após a modificação
+        _saveProdutos(); // Salva após a alteração da quantidade
+        _applyFilters(); // Refiltrar e pesquisar após a modificação
+        _showSnackBar('Uma unidade de "${produtos[originalIndex].nome}" foi adicionada.');
+      });
+    }
   }
 
   String formatarData(DateTime data) {
@@ -301,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Campos de entrada
+            // Campos de entrada de novo produto
             TextField(
               controller: nomeController,
               decoration: const InputDecoration(
@@ -339,6 +406,66 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 30), // Espaçamento aumentado para separação de seção
+
+            // BARRA DE PESQUISA
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Pesquisar Produto',
+                hintText: 'Digite o nome do produto',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    _applyFilters(); // Limpa o filtro de pesquisa e reaplica os outros
+                  },
+                )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 20), // Espaçamento após a barra de pesquisa
+
+            // BARRA DE FILTRO ADICIONADA AQUI
+            Align(
+              alignment: Alignment.centerLeft, // Alinha o SegmentedButton à esquerda
+              child: SegmentedButton<ProductFilter>(
+                segments: const <ButtonSegment<ProductFilter>>[
+                  ButtonSegment<ProductFilter>(
+                    value: ProductFilter.all,
+                    label: Text('Todos'),
+                    icon: Icon(Icons.list),
+                  ),
+                  ButtonSegment<ProductFilter>(
+                    value: ProductFilter.nearExpiration,
+                    label: Text('Vence em Breve'),
+                    icon: Icon(Icons.warning_amber),
+                  ),
+                  ButtonSegment<ProductFilter>(
+                    value: ProductFilter.expired,
+                    label: Text('Vencidos'),
+                    icon: Icon(Icons.dangerous),
+                  ),
+                ],
+                selected: <ProductFilter>{_selectedFilter},
+                onSelectionChanged: (Set<ProductFilter> newSelection) {
+                  setState(() {
+                    _selectedFilter = newSelection.first;
+                    _applyFilters(); // Aplica o novo filtro
+                  });
+                },
+                style: SegmentedButton.styleFrom(
+                  foregroundColor: Colors.teal[800], // Cor do texto dos segmentos
+                  selectedForegroundColor: Colors.white, // Cor do texto do segmento selecionado
+                  selectedBackgroundColor: Colors.teal, // Cor de fundo do segmento selecionado
+                  side: BorderSide(color: Colors.teal.shade200), // Borda dos segmentos
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20), // Espaçamento após a barra de filtro
+
             const Text(
               'Meus Produtos na Despensa', // Título mais envolvente
               style: TextStyle(
@@ -350,19 +477,23 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20), // Espaçamento aumentado
             Expanded(
-              child: produtos.isEmpty
+              child: _filteredProdutos.isEmpty // Usa a lista filtrada aqui
                   ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.inbox_outlined, // Ícone de estado vazio
+                      _searchController.text.isEmpty && _selectedFilter == ProductFilter.all
+                          ? Icons.inbox_outlined // Ícone para "despensa vazia"
+                          : Icons.search_off, // Ícone para "nenhum resultado"
                       size: 80,
                       color: Colors.grey[400],
                     ),
                     const SizedBox(height: 15),
                     Text(
-                      'Sua despensa está vazia! Adicione alguns produtos para começar.',
+                      _searchController.text.isEmpty && _selectedFilter == ProductFilter.all
+                          ? 'Sua despensa está vazia! Adicione alguns produtos para começar.'
+                          : 'Nenhum produto encontrado com "${_searchController.text}" para o filtro selecionado.',
                       style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                       textAlign: TextAlign.center,
                     ),
@@ -370,9 +501,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               )
                   : ListView.builder(
-                itemCount: produtos.length,
+                itemCount: _filteredProdutos.length, // Usa a lista filtrada aqui
                 itemBuilder: (context, index) {
-                  final produto = produtos[index];
+                  final produto = _filteredProdutos[index]; // Pega o produto da lista filtrada
                   Color? cardColor;
                   String statusText = '';
                   Color? statusTextColor;
