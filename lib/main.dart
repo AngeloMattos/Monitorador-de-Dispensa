@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; // Necessário para codificação/decodificação JSON
+import 'dart:convert';
 
 void main() => runApp(const MyApp());
 
-// Enum para os tipos de filtro de produto
 enum ProductFilter {
   all,
   expired,
@@ -21,64 +20,64 @@ class MyApp extends StatelessWidget {
       title: 'Monitorador de Despensa',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // Define um esquema de cores consistente para toda a aplicação
-          primarySwatch: Colors.teal, // Um verde-azulado calmante
-          colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.teal).copyWith(
-            secondary: Colors.amber, // Uma cor vibrante para o botão de ação flutuante, etc.
+        primarySwatch: Colors.teal,
+        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.teal).copyWith(
+          secondary: Colors.amber,
+        ),
+        scaffoldBackgroundColor: Colors.teal[50],
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.teal[700],
+          foregroundColor: Colors.white,
+          elevation: 4,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8), // Bordas ligeiramente menos arredondadas
+            borderSide: BorderSide.none,
           ),
-          scaffoldBackgroundColor: Colors.teal[50], // Fundo claro para uma sensação de frescor
-          appBarTheme: AppBarTheme(
-            backgroundColor: Colors.teal[700], // Teal mais escuro para a barra do aplicativo
-            foregroundColor: Colors.white, // Texto branco na barra do aplicativo
-            elevation: 4, // Adiciona uma sombra sutil
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.teal.shade200, width: 1),
           ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: Colors.white, // Fundo branco para os campos de entrada
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12), // Bordas arredondadas
-              borderSide: BorderSide.none, // Sem borda visível inicialmente
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.teal.shade200, width: 1), // Borda clara quando habilitado
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.teal.shade700, width: 2), // Borda mais forte quando focado
-            ),
-            labelStyle: TextStyle(color: Colors.teal[800]), // Cor do texto do rótulo
-            hintStyle: TextStyle(color: Colors.grey[500]),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.teal.shade700, width: 2),
           ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal, // Cor do botão
-              foregroundColor: Colors.white, // Cor do texto do botão
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12), // Botões arredondados
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-          cardTheme: CardThemeData( // CORREÇÃO: Usando CardThemeData
-            elevation: 4,
+          labelStyle: TextStyle(color: Colors.teal[800]),
+          hintStyle: TextStyle(color: Colors.grey[500]),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12), // Padding menor
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.teal,
+            foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15), // Cartões mais arredondados
+              borderRadius: BorderRadius.circular(8), // Botões ligeiramente menos arredondados
             ),
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4), // Margem um pouco maior
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Padding menor
+            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold), // Fonte um pouco menor
           ),
-          listTileTheme: ListTileThemeData(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 3, // Sombra mais sutil
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10), // Cartões menos arredondados
           ),
-          snackBarTheme: SnackBarThemeData(
-            backgroundColor: Colors.grey[800], // Snackbar mais escura para melhor contraste
-            contentTextStyle: const TextStyle(color: Colors.white),
-            behavior: SnackBarBehavior.floating, // Snackbar flutuante
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            actionTextColor: Colors.amberAccent,
-          )
+          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4), // Margem reduzida
+        ),
+        listTileTheme: ListTileThemeData(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Padding reduzido
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          backgroundColor: Colors.grey[800],
+          contentTextStyle: const TextStyle(color: Colors.white),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          actionTextColor: Colors.amberAccent,
+        ),
       ),
       home: const HomeScreen(),
     );
@@ -89,39 +88,46 @@ class Produto {
   String nome;
   DateTime validade;
   int quantidade;
+  String? categoria;
+  String? localArmazenamento;
 
-  Produto({required this.nome, required this.validade, required this.quantidade});
+  Produto({
+    required this.nome,
+    required this.validade,
+    required this.quantidade,
+    this.categoria,
+    this.localArmazenamento,
+  });
 
-  // Converte um objeto Produto para um mapa JSON
   Map<String, dynamic> toJson() => {
     'nome': nome,
-    'validade': validade.toIso8601String(), // Armazena a data como string ISO
+    'validade': validade.toIso8601String(),
     'quantidade': quantidade,
+    'categoria': categoria,
+    'localArmazenamento': localArmazenamento,
   };
 
-  // Cria um objeto Produto a partir de um mapa JSON
   factory Produto.fromJson(Map<String, dynamic> json) => Produto(
     nome: json['nome'],
     validade: DateTime.parse(json['validade']),
     quantidade: json['quantidade'],
+    categoria: json['categoria'],
+    localArmazenamento: json['localArmazenamento'],
   );
 
-  // Getter para verificar se o produto está vencido
   bool get isExpired {
     final hoje = DateTime.now();
-    // Compara apenas as datas, ignorando a hora
     return validade.year < hoje.year ||
         (validade.year == hoje.year && validade.month < hoje.month) ||
-        (validade.year == hoje.year && validade.month == hoje.month && validade.day < hoje.day);
+        (validade.year == hoje.year && validade.month == hoje.month && hoje.day > validade.day);
   }
 
-  // Getter para verificar se o produto está perto do vencimento (dentro de 3 dias, incluindo hoje)
   bool get pertoDoVencimento {
     final hoje = DateTime.now();
     final validadeMidnight = DateTime(validade.year, validade.month, validade.day);
     final hojeMidnight = DateTime(hoje.year, hoje.month, hoje.day);
     final diasRestantes = validadeMidnight.difference(hojeMidnight).inDays;
-    return diasRestantes >= 0 && diasRestantes <= 3 && !isExpired; // Perto do vencimento, mas ainda não vencido
+    return diasRestantes >= 0 && diasRestantes <= 3 && !isExpired;
   }
 }
 
@@ -134,23 +140,32 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<Produto> produtos = [];
-  List<Produto> _filteredProdutos = []; // Nova lista para produtos filtrados
+  List<Produto> _filteredProdutos = [];
 
   final TextEditingController nomeController = TextEditingController();
   final TextEditingController validadeController = TextEditingController();
   final TextEditingController quantidadeController = TextEditingController();
-  final TextEditingController _searchController = TextEditingController(); // Controlador para a barra de pesquisa
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController categoriaController = TextEditingController();
+  final TextEditingController localArmazenamentoController = TextEditingController();
 
-  ProductFilter _selectedFilter = ProductFilter.all; // Estado do filtro selecionado
+  ProductFilter _selectedFilter = ProductFilter.all;
 
-  // Inicializa SharedPreferences
+  bool _useCategory = false;
+  bool _useLocation = false;
+
+  String? _selectedCategoryFilter;
+  String? _selectedLocationFilter;
+
+  List<String> _uniqueCategories = ['Todos'];
+  List<String> _uniqueLocations = ['Todos'];
+
   late SharedPreferences _prefs;
 
   @override
   void initState() {
     super.initState();
     _initSharedPreferences();
-    // Adiciona um listener ao controlador de pesquisa para filtrar produtos em tempo real
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -161,6 +176,8 @@ class _HomeScreenState extends State<HomeScreen> {
     nomeController.dispose();
     validadeController.dispose();
     quantidadeController.dispose();
+    categoriaController.dispose();
+    localArmazenamentoController.dispose();
     super.dispose();
   }
 
@@ -169,46 +186,63 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadProdutos();
   }
 
-  // Carrega produtos do SharedPreferences
   void _loadProdutos() {
     final String? produtosJsonString = _prefs.getString('produtos_list');
     if (produtosJsonString != null) {
       final List<dynamic> jsonList = json.decode(produtosJsonString);
       setState(() {
         produtos = jsonList.map((jsonItem) => Produto.fromJson(jsonItem)).toList();
-        _sortProdutos(); // Ordena após carregar
-        _applyFilters(); // Aplica os filtros e pesquisa após carregar
+        _sortProdutos();
+        _updateUniqueFilters();
+        _applyFilters();
       });
     }
   }
 
-  // Salva produtos no SharedPreferences
   void _saveProdutos() {
     final List<Map<String, dynamic>> jsonList = produtos.map((produto) => produto.toJson()).toList();
     _prefs.setString('produtos_list', json.encode(jsonList));
   }
 
-  // Ordena os produtos por status e depois por validade
   void _sortProdutos() {
     produtos.sort((a, b) {
-      // Itens vencidos primeiro
       if (a.isExpired && !b.isExpired) return -1;
       if (!a.isExpired && b.isExpired) return 1;
-
-      // Depois itens perto do vencimento
       if (a.pertoDoVencimento && !b.pertoDoVencimento) return -1;
       if (!a.pertoDoVencimento && b.pertoDoVencimento) return 1;
-
-      // Caso contrário, ordena por data de validade (mais antiga primeiro)
       return a.validade.compareTo(b.validade);
     });
   }
 
-  // Lógica central para aplicar filtros e pesquisa
+  void _updateUniqueFilters() {
+    Set<String> categories = {};
+    Set<String> locations = {};
+
+    for (var produto in produtos) {
+      if (produto.categoria != null && produto.categoria!.isNotEmpty) {
+        categories.add(produto.categoria!);
+      }
+      if (produto.localArmazenamento != null && produto.localArmazenamento!.isNotEmpty) {
+        locations.add(produto.localArmazenamento!);
+      }
+    }
+
+    setState(() {
+      _uniqueCategories = ['Todos', ...categories.toList()..sort()];
+      _uniqueLocations = ['Todos', ...locations.toList()..sort()];
+
+      if (_selectedCategoryFilter != null && !_uniqueCategories.contains(_selectedCategoryFilter)) {
+        _selectedCategoryFilter = 'Todos';
+      }
+      if (_selectedLocationFilter != null && !_uniqueLocations.contains(_selectedLocationFilter)) {
+        _selectedLocationFilter = 'Todos';
+      }
+    });
+  }
+
   void _applyFilters() {
     List<Produto> tempFilteredList = produtos;
 
-    // 1. Aplica o filtro de pesquisa por nome
     final String query = _searchController.text.toLowerCase();
     if (query.isNotEmpty) {
       tempFilteredList = tempFilteredList
@@ -216,25 +250,33 @@ class _HomeScreenState extends State<HomeScreen> {
           .toList();
     }
 
-    // 2. Aplica o filtro de status (Vencido, Perto do Vencimento)
     if (_selectedFilter == ProductFilter.expired) {
       tempFilteredList = tempFilteredList.where((produto) => produto.isExpired).toList();
     } else if (_selectedFilter == ProductFilter.nearExpiration) {
       tempFilteredList = tempFilteredList.where((produto) => produto.pertoDoVencimento).toList();
     }
-    // Se _selectedFilter for ProductFilter.all, nenhuma filtragem adicional é feita aqui
+
+    if (_selectedCategoryFilter != null && _selectedCategoryFilter != 'Todos') {
+      tempFilteredList = tempFilteredList
+          .where((produto) => produto.categoria == _selectedCategoryFilter)
+          .toList();
+    }
+
+    if (_selectedLocationFilter != null && _selectedLocationFilter != 'Todos') {
+      tempFilteredList = tempFilteredList
+          .where((produto) => produto.localArmazenamento == _selectedLocationFilter)
+          .toList();
+    }
 
     setState(() {
       _filteredProdutos = tempFilteredList;
     });
   }
 
-  // Chamado quando o texto da pesquisa muda
   void _onSearchChanged() {
-    _applyFilters(); // Chama a função central de aplicação de filtros
+    _applyFilters();
   }
 
-  // Função para exibir uma mensagem SnackBar
   void _showSnackBar(String message, {Color? backgroundColor, SnackBarAction? action}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -246,7 +288,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Função para selecionar data
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -257,13 +298,13 @@ class _HomeScreenState extends State<HomeScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Theme.of(context).primaryColor, // Cor de fundo do cabeçalho
-              onPrimary: Colors.white, // Cor do texto do cabeçalho
-              onSurface: Colors.black, // Cor do texto do corpo
+              primary: Theme.of(context).primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).primaryColor, // Cor do texto do botão
+                foregroundColor: Theme.of(context).primaryColor,
               ),
             ),
           ),
@@ -280,6 +321,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final String nome = nomeController.text.trim();
     final DateTime? validade = DateTime.tryParse(validadeController.text);
     final int? quantidade = int.tryParse(quantidadeController.text);
+    final String? categoria = _useCategory ? categoriaController.text.trim() : null;
+    final String? localArmazenamento = _useLocation ? localArmazenamentoController.text.trim() : null;
 
     if (nome.isEmpty) {
       _showSnackBar('O nome do produto não pode estar vazio.', backgroundColor: Colors.red[700]);
@@ -293,26 +336,42 @@ class _HomeScreenState extends State<HomeScreen> {
       _showSnackBar('A quantidade deve ser um número inteiro positivo.', backgroundColor: Colors.red[700]);
       return;
     }
+    if (_useCategory && (categoria == null || categoria.isEmpty)) {
+      _showSnackBar('A categoria não pode estar vazia se a opção estiver marcada.', backgroundColor: Colors.red[700]);
+      return;
+    }
+    if (_useLocation && (localArmazenamento == null || localArmazenamento.isEmpty)) {
+      _showSnackBar('O local de armazenamento não pode estar vazio se a opção estiver marcada.', backgroundColor: Colors.red[700]);
+      return;
+    }
 
     setState(() {
-      produtos.add(Produto(nome: nome, validade: validade, quantidade: quantidade));
-      _sortProdutos(); // Ordena após adicionar
-      _saveProdutos(); // Salva após adicionar
-      _applyFilters(); // Atualiza a lista filtrada e pesquisada
+      produtos.add(Produto(
+        nome: nome,
+        validade: validade,
+        quantidade: quantidade,
+        categoria: categoria,
+        localArmazenamento: localArmazenamento,
+      ));
+      _sortProdutos();
+      _saveProdutos();
+      _updateUniqueFilters();
+      _applyFilters();
     });
 
     nomeController.clear();
     validadeController.clear();
     quantidadeController.clear();
+    categoriaController.clear();
+    localArmazenamentoController.clear();
     _showSnackBar('Produto "$nome" adicionado com sucesso!', backgroundColor: Colors.green[700]);
   }
 
   void darBaixaProduto(int index) {
-    // Encontrar o produto na lista original 'produtos' usando o produto filtrado
     final Produto produtoRemovido = _filteredProdutos[index];
     final int originalIndex = produtos.indexOf(produtoRemovido);
 
-    if (originalIndex != -1) { // Verifica se o produto ainda existe na lista original
+    if (originalIndex != -1) {
       setState(() {
         if (produtos[originalIndex].quantidade > 1) {
           produtos[originalIndex].quantidade--;
@@ -324,30 +383,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 label: 'Desfazer',
                 onPressed: () {
                   setState(() {
-                    _loadProdutos(); // Recarrega para reverter se necessário.
-                    // _applyFilters() já é chamado dentro de _loadProdutos
+                    _loadProdutos();
                   });
                 },
               ));
         }
-        _sortProdutos(); // Ordena após a modificação
-        _saveProdutos(); // Salva após a alteração da quantidade
-        _applyFilters(); // Refiltrar e pesquisar após a modificação
+        _sortProdutos();
+        _saveProdutos();
+        _updateUniqueFilters();
+        _applyFilters();
       });
     }
   }
 
   void adicionarUnidade(int index) {
-    // Encontrar o produto na lista original 'produtos' usando o produto filtrado
     final Produto produtoAdicionado = _filteredProdutos[index];
     final int originalIndex = produtos.indexOf(produtoAdicionado);
 
     if (originalIndex != -1) {
       setState(() {
         produtos[originalIndex].quantidade++;
-        _sortProdutos(); // Ordena após a modificação
-        _saveProdutos(); // Salva após a alteração da quantidade
-        _applyFilters(); // Refiltrar e pesquisar após a modificação
+        _sortProdutos();
+        _saveProdutos();
+        _updateUniqueFilters();
+        _applyFilters();
         _showSnackBar('Uma unidade de "${produtos[originalIndex].nome}" foi adicionada.');
       });
     }
@@ -362,10 +421,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Monitorador de Despensa'),
-        centerTitle: true, // Centraliza o título da barra do aplicativo
+        centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0), // Padding geral reduzido
         child: Column(
           children: [
             // Campos de entrada de novo produto
@@ -373,10 +432,10 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: nomeController,
               decoration: const InputDecoration(
                 labelText: 'Nome do Produto',
-                prefixIcon: Icon(Icons.shopping_basket), // Adiciona um ícone
+                prefixIcon: Icon(Icons.shopping_basket, size: 20), // Ícone menor
               ),
             ),
-            const SizedBox(height: 15), // Espaçamento aumentado
+            const SizedBox(height: 12),
             TextField(
               controller: validadeController,
               readOnly: true,
@@ -384,28 +443,86 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: const InputDecoration(
                 labelText: 'Data de Validade',
                 hintText: 'Toque para selecionar a data',
-                prefixIcon: Icon(Icons.calendar_today), // Adiciona um ícone
+                prefixIcon: Icon(Icons.calendar_today, size: 20), // Ícone menor
               ),
             ),
-            const SizedBox(height: 15), // Espaçamento aumentado
+            const SizedBox(height: 12),
             TextField(
               controller: quantidadeController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Quantidade',
-                prefixIcon: Icon(Icons.format_list_numbered), // Adiciona um ícone
+                prefixIcon: Icon(Icons.format_list_numbered, size: 20), // Ícone menor
               ),
             ),
-            const SizedBox(height: 20), // Espaçamento aumentado
+            const SizedBox(height: 16),
+
+            // Switches para Categoria e Local
+            SwitchListTile(
+              title: const Text('Adicionar Categoria (Opcional)', style: TextStyle(fontSize: 14)), // Fonte menor
+              value: _useCategory,
+              onChanged: (bool value) {
+                setState(() {
+                  _useCategory = value;
+                  if (!value) {
+                    categoriaController.clear();
+                  }
+                });
+              },
+              activeColor: Theme.of(context).primaryColor,
+              contentPadding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact, // Reduz o tamanho visual
+            ),
+            if (_useCategory)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12.0), // Padding reduzido
+                child: TextField(
+                  controller: categoriaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Categoria',
+                    hintText: 'Ex: Laticínios, Grãos',
+                    prefixIcon: Icon(Icons.category, size: 20),
+                  ),
+                ),
+              ),
+
+            SwitchListTile(
+              title: const Text('Adicionar Local (Opcional)', style: TextStyle(fontSize: 14)), // Fonte menor
+              value: _useLocation,
+              onChanged: (bool value) {
+                setState(() {
+                  _useLocation = value;
+                  if (!value) {
+                    localArmazenamentoController.clear();
+                  }
+                });
+              },
+              activeColor: Theme.of(context).primaryColor,
+              contentPadding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact, // Reduz o tamanho visual
+            ),
+            if (_useLocation)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0), // Padding reduzido
+                child: TextField(
+                  controller: localArmazenamentoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Local de Armazenamento',
+                    hintText: 'Ex: Geladeira, Armário',
+                    prefixIcon: Icon(Icons.location_on, size: 20),
+                  ),
+                ),
+              ),
+
             ElevatedButton.icon(
               onPressed: adicionarProduto,
-              icon: const Icon(Icons.add_shopping_cart), // Ícone mais específico
+              icon: const Icon(Icons.add_shopping_cart, size: 20), // Ícone menor
               label: const Text('Adicionar Produto'),
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(50), // Faz o botão ocupar toda a largura
+                minimumSize: const Size.fromHeight(45), // Altura do botão reduzida
               ),
             ),
-            const SizedBox(height: 30), // Espaçamento aumentado para separação de seção
+            const SizedBox(height: 25), // Espaçamento reduzido
 
             // BARRA DE PESQUISA
             TextField(
@@ -413,130 +530,183 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: InputDecoration(
                 labelText: 'Pesquisar Produto',
                 hintText: 'Digite o nome do produto',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search, size: 20),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                  icon: const Icon(Icons.clear),
+                  icon: const Icon(Icons.clear, size: 20),
                   onPressed: () {
                     _searchController.clear();
-                    _applyFilters(); // Limpa o filtro de pesquisa e reaplica os outros
+                    _applyFilters();
                   },
                 )
                     : null,
               ),
             ),
-            const SizedBox(height: 20), // Espaçamento após a barra de pesquisa
+            const SizedBox(height: 16),
 
-            // BARRA DE FILTRO ADICIONADA AQUI
+            // FILTROS (Status, Categoria, Local) - Agrupados
             Align(
-              alignment: Alignment.centerLeft, // Alinha o SegmentedButton à esquerda
-              child: SegmentedButton<ProductFilter>(
-                segments: const <ButtonSegment<ProductFilter>>[
-                  ButtonSegment<ProductFilter>(
-                    value: ProductFilter.all,
-                    label: Text('Todos'),
-                    icon: Icon(Icons.list),
+              alignment: Alignment.centerLeft,
+              child: Wrap( // Usando Wrap para que os filtros quebrem linha se não houver espaço
+                spacing: 8.0, // Espaço horizontal entre os chips/botões
+                runSpacing: 8.0, // Espaço vertical entre as linhas de chips/botões
+                children: [
+                  SegmentedButton<ProductFilter>(
+                    segments: const <ButtonSegment<ProductFilter>>[
+                      ButtonSegment<ProductFilter>(
+                        value: ProductFilter.all,
+                        label: Text('Todos', style: TextStyle(fontSize: 12)),
+                        icon: Icon(Icons.list, size: 16),
+                      ),
+                      ButtonSegment<ProductFilter>(
+                        value: ProductFilter.nearExpiration,
+                        label: Text('Vence em Breve', style: TextStyle(fontSize: 12)),
+                        icon: Icon(Icons.warning_amber, size: 16),
+                      ),
+                      ButtonSegment<ProductFilter>(
+                        value: ProductFilter.expired,
+                        label: Text('Vencidos', style: TextStyle(fontSize: 12)),
+                        icon: Icon(Icons.dangerous, size: 16),
+                      ),
+                    ],
+                    selected: <ProductFilter>{_selectedFilter},
+                    onSelectionChanged: (Set<ProductFilter> newSelection) {
+                      setState(() {
+                        _selectedFilter = newSelection.first;
+                        _applyFilters();
+                      });
+                    },
+                    style: SegmentedButton.styleFrom(
+                      foregroundColor: Colors.teal[800],
+                      selectedForegroundColor: Colors.white,
+                      selectedBackgroundColor: Colors.teal,
+                      side: BorderSide(color: Colors.teal.shade200),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), // Menos arredondado
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Padding menor
+                    ),
                   ),
-                  ButtonSegment<ProductFilter>(
-                    value: ProductFilter.nearExpiration,
-                    label: Text('Vence em Breve'),
-                    icon: Icon(Icons.warning_amber),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCategoryFilter ?? 'Todos',
+                    decoration: const InputDecoration(
+                      labelText: 'Categoria', // Label mais conciso
+                      prefixIcon: Icon(Icons.category, size: 20),
+                      contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12), // Ajuste o padding
+                    ),
+                    items: _uniqueCategories.map((String category) {
+                      return DropdownMenuItem<String>(
+                        value: category,
+                        child: Text(category, style: const TextStyle(fontSize: 14)), // Fonte menor
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedCategoryFilter = newValue;
+                        _applyFilters();
+                      });
+                    },
+                    isDense: true, // Torna o dropdown mais compacto
                   ),
-                  ButtonSegment<ProductFilter>(
-                    value: ProductFilter.expired,
-                    label: Text('Vencidos'),
-                    icon: Icon(Icons.dangerous),
+                  DropdownButtonFormField<String>(
+                    value: _selectedLocationFilter ?? 'Todos',
+                    decoration: const InputDecoration(
+                      labelText: 'Local', // Label mais conciso
+                      prefixIcon: Icon(Icons.location_on, size: 20),
+                      contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12), // Ajuste o padding
+                    ),
+                    items: _uniqueLocations.map((String location) {
+                      return DropdownMenuItem<String>(
+                        value: location,
+                        child: Text(location, style: const TextStyle(fontSize: 14)), // Fonte menor
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedLocationFilter = newValue;
+                        _applyFilters();
+                      });
+                    },
+                    isDense: true, // Torna o dropdown mais compacto
                   ),
                 ],
-                selected: <ProductFilter>{_selectedFilter},
-                onSelectionChanged: (Set<ProductFilter> newSelection) {
-                  setState(() {
-                    _selectedFilter = newSelection.first;
-                    _applyFilters(); // Aplica o novo filtro
-                  });
-                },
-                style: SegmentedButton.styleFrom(
-                  foregroundColor: Colors.teal[800], // Cor do texto dos segmentos
-                  selectedForegroundColor: Colors.white, // Cor do texto do segmento selecionado
-                  selectedBackgroundColor: Colors.teal, // Cor de fundo do segmento selecionado
-                  side: BorderSide(color: Colors.teal.shade200), // Borda dos segmentos
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
               ),
             ),
-            const SizedBox(height: 20), // Espaçamento após a barra de filtro
+            const SizedBox(height: 20),
 
             const Text(
-              'Meus Produtos na Despensa', // Título mais envolvente
+              'Meus Produtos na Despensa',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 20, // Fonte um pouco menor
                 fontWeight: FontWeight.bold,
                 color: Colors.teal,
-                letterSpacing: 0.8, // Adiciona algum espaçamento entre as letras
+                letterSpacing: 0.8,
               ),
             ),
-            const SizedBox(height: 20), // Espaçamento aumentado
+            const SizedBox(height: 15), // Espaçamento reduzido
             Expanded(
-              child: _filteredProdutos.isEmpty // Usa a lista filtrada aqui
+              child: _filteredProdutos.isEmpty
                   ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      _searchController.text.isEmpty && _selectedFilter == ProductFilter.all
-                          ? Icons.inbox_outlined // Ícone para "despensa vazia"
-                          : Icons.search_off, // Ícone para "nenhum resultado"
-                      size: 80,
+                      _searchController.text.isEmpty && _selectedFilter == ProductFilter.all &&
+                          (_selectedCategoryFilter == null || _selectedCategoryFilter == 'Todos') &&
+                          (_selectedLocationFilter == null || _selectedLocationFilter == 'Todos')
+                          ? Icons.inbox_outlined
+                          : Icons.search_off,
+                      size: 70, // Ícone menor
                       color: Colors.grey[400],
                     ),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 12),
                     Text(
-                      _searchController.text.isEmpty && _selectedFilter == ProductFilter.all
-                          ? 'Sua despensa está vazia! Adicione alguns produtos para começar.'
-                          : 'Nenhum produto encontrado com "${_searchController.text}" para o filtro selecionado.',
-                      style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                      _searchController.text.isEmpty && _selectedFilter == ProductFilter.all &&
+                          (_selectedCategoryFilter == null || _selectedCategoryFilter == 'Todos') &&
+                          (_selectedLocationFilter == null || _selectedLocationFilter == 'Todos')
+                          ? 'Sua despensa está vazia!\nAdicione alguns produtos para começar.'
+                          : 'Nenhum produto encontrado com os filtros selecionados.',
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]), // Fonte menor
                       textAlign: TextAlign.center,
                     ),
                   ],
                 ),
               )
                   : ListView.builder(
-                itemCount: _filteredProdutos.length, // Usa a lista filtrada aqui
+                itemCount: _filteredProdutos.length,
                 itemBuilder: (context, index) {
-                  final produto = _filteredProdutos[index]; // Pega o produto da lista filtrada
+                  final produto = _filteredProdutos[index];
                   Color? cardColor;
                   String statusText = '';
                   Color? statusTextColor;
 
                   if (produto.isExpired) {
-                    cardColor = Colors.red[100]; // Vermelho mais claro para o fundo do cartão vencido
+                    cardColor = Colors.red[100];
                     statusText = 'VENCIDO';
-                    statusTextColor = Colors.red[800]; // Vermelho mais escuro para o texto de status
+                    statusTextColor = Colors.red[800];
                   } else if (produto.pertoDoVencimento) {
-                    cardColor = Colors.orange[100]; // Laranja mais claro
+                    cardColor = Colors.orange[100];
                     statusText = 'VENCE EM BREVE';
-                    statusTextColor = Colors.orange[800]; // Laranja mais escuro
+                    statusTextColor = Colors.orange[800];
                   } else {
-                    cardColor = Colors.white; // Padrão para itens não críticos
+                    cardColor = Colors.white;
                   }
 
                   return Card(
                     color: cardColor,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0), // Ajusta o preenchimento
+                      padding: const EdgeInsets.symmetric(vertical: 2.0), // Padding bem reduzido
                       child: ListTile(
                         leading: Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(6), // Padding reduzido
                           decoration: BoxDecoration(
-                            color: Colors.teal[200], // Fundo para o avatar da quantidade
+                            color: Colors.teal[200],
                             shape: BoxShape.circle,
                           ),
                           child: Text(
                             produto.quantidade.toString(),
                             style: TextStyle(
-                              color: Colors.teal[900], // Texto mais escuro para a quantidade
+                              color: Colors.teal[900],
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              fontSize: 16, // Fonte menor
                             ),
                           ),
                         ),
@@ -544,29 +714,39 @@ class _HomeScreenState extends State<HomeScreen> {
                           produto.nome,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 18, // Título ligeiramente maior
+                            fontSize: 16, // Título menor
                             color: Colors.teal[900],
                             decoration: produto.isExpired ? TextDecoration.lineThrough : null,
-                            decorationThickness: 2, // Torna o risco mais visível
+                            decorationThickness: 2,
                           ),
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 4), // Espaçamento
+                            const SizedBox(height: 2), // Espaçamento menor
                             Text(
                               'Validade: ${formatarData(produto.validade)}',
-                              style: TextStyle(color: Colors.grey[700]),
+                              style: TextStyle(color: Colors.grey[700], fontSize: 12), // Fonte menor
                             ),
+                            if (produto.categoria != null && produto.categoria!.isNotEmpty)
+                              Text(
+                                'Categoria: ${produto.categoria}',
+                                style: TextStyle(color: Colors.grey[600], fontSize: 11), // Fonte ainda menor
+                              ),
+                            if (produto.localArmazenamento != null && produto.localArmazenamento!.isNotEmpty)
+                              Text(
+                                'Local: ${produto.localArmazenamento}',
+                                style: TextStyle(color: Colors.grey[600], fontSize: 11), // Fonte ainda menor
+                              ),
                             if (statusText.isNotEmpty)
                               Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
+                                padding: const EdgeInsets.only(top: 3.0), // Padding menor
                                 child: Text(
                                   statusText,
                                   style: TextStyle(
                                     color: statusTextColor,
-                                    fontWeight: FontWeight.w800, // Torna o texto de status mais negrito
-                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12, // Fonte menor
                                   ),
                                 ),
                               ),
@@ -576,12 +756,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: Icon(Icons.add_circle, color: Colors.teal[600], size: 30),
+                              icon: Icon(Icons.add_circle, color: Colors.teal[600], size: 26), // Ícone menor
                               onPressed: () => adicionarUnidade(index),
                               tooltip: 'Adicionar 1 unidade',
                             ),
                             IconButton(
-                              icon: Icon(Icons.remove_circle, color: Colors.red[600], size: 30),
+                              icon: Icon(Icons.remove_circle, color: Colors.red[600], size: 26), // Ícone menor
                               onPressed: () => darBaixaProduto(index),
                               tooltip: 'Remover 1 unidade ou produto',
                             ),
