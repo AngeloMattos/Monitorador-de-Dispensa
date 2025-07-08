@@ -100,26 +100,27 @@ class Produto {
   });
 
   Map<String, dynamic> toJson() => {
-    'nome': nome,
-    'validade': validade.toIso8601String(),
-    'quantidade': quantidade,
-    'categoria': categoria,
-    'localArmazenamento': localArmazenamento,
-  };
+        'nome': nome,
+        'validade': validade.toIso8601String(),
+        'quantidade': quantidade,
+        'categoria': categoria,
+        'localArmazenamento': localArmazenamento,
+      };
 
   factory Produto.fromJson(Map<String, dynamic> json) => Produto(
-    nome: json['nome'],
-    validade: DateTime.parse(json['validade']),
-    quantidade: json['quantidade'],
-    categoria: json['categoria'],
-    localArmazenamento: json['localArmazenamento'],
-  );
+        nome: json['nome'],
+        validade: DateTime.parse(json['validade']),
+        quantidade: json['quantidade'],
+        categoria: json['categoria'],
+        localArmazenamento: json['localArmazenamento'],
+      );
 
   bool get isExpired {
     final hoje = DateTime.now();
-    return validade.year < hoje.year ||
-        (validade.year == hoje.year && validade.month < hoje.month) ||
-        (validade.year == hoje.year && validade.month == hoje.month && hoje.day > validade.day);
+    // Compare apenas a data, ignorando a hora
+    final validadeMidnight = DateTime(validade.year, validade.month, validade.day);
+    final hojeMidnight = DateTime(hoje.year, hoje.month, hoje.day);
+    return hojeMidnight.isAfter(validadeMidnight);
   }
 
   bool get pertoDoVencimento {
@@ -153,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _useCategory = false;
   bool _useLocation = false;
-  bool _showFilterOptions = false; // NOVA VARIÁVEL DE ESTADO
+  bool _showFilterOptions = false;
 
   String? _selectedCategoryFilter;
   String? _selectedLocationFilter;
@@ -162,6 +163,10 @@ class _HomeScreenState extends State<HomeScreen> {
   List<String> _uniqueLocations = ['Todos'];
 
   late SharedPreferences _prefs;
+
+  // Variáveis para o modo de edição
+  Produto? _editingProduct;
+  int? _editingProductIndex;
 
   @override
   void initState() {
@@ -318,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void adicionarProduto() {
+  void adicionarOuAtualizarProduto() {
     final String nome = nomeController.text.trim();
     final DateTime? validade = DateTime.tryParse(validadeController.text);
     final int? quantidade = int.tryParse(quantidadeController.text);
@@ -347,13 +352,29 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() {
-      produtos.add(Produto(
-        nome: nome,
-        validade: validade,
-        quantidade: quantidade,
-        categoria: categoria,
-        localArmazenamento: localArmazenamento,
-      ));
+      if (_editingProduct != null && _editingProductIndex != null) {
+        // Modo de edição
+        produtos[_editingProductIndex!] = Produto(
+          nome: nome,
+          validade: validade,
+          quantidade: quantidade,
+          categoria: categoria,
+          localArmazenamento: localArmazenamento,
+        );
+        _editingProduct = null;
+        _editingProductIndex = null;
+        _showSnackBar('Produto "$nome" atualizado com sucesso!', backgroundColor: Colors.green[700]);
+      } else {
+        // Modo de adição
+        produtos.add(Produto(
+          nome: nome,
+          validade: validade,
+          quantidade: quantidade,
+          categoria: categoria,
+          localArmazenamento: localArmazenamento,
+        ));
+        _showSnackBar('Produto "$nome" adicionado com sucesso!', backgroundColor: Colors.green[700]);
+      }
       _sortProdutos();
       _saveProdutos();
       _updateUniqueFilters();
@@ -365,7 +386,74 @@ class _HomeScreenState extends State<HomeScreen> {
     quantidadeController.clear();
     categoriaController.clear();
     localArmazenamentoController.clear();
-    _showSnackBar('Produto "$nome" adicionado com sucesso!', backgroundColor: Colors.green[700]);
+    setState(() {
+      _useCategory = false;
+      _useLocation = false;
+    });
+  }
+
+  void _editProduto(Produto produto) {
+    setState(() {
+      _editingProduct = produto;
+      _editingProductIndex = produtos.indexOf(produto);
+
+      nomeController.text = produto.nome;
+      validadeController.text = DateFormat('yyyy-MM-dd').format(produto.validade);
+      quantidadeController.text = produto.quantidade.toString();
+
+      _useCategory = produto.categoria != null && produto.categoria!.isNotEmpty;
+      categoriaController.text = produto.categoria ?? '';
+
+      _useLocation = produto.localArmazenamento != null && produto.localArmazenamento!.isNotEmpty;
+      localArmazenamentoController.text = produto.localArmazenamento ?? '';
+    });
+
+    // Rolar para o topo para mostrar os campos de edição
+    Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+      alignment: 0.0,
+    );
+  }
+
+  void _confirmarBaixaOuExclusao(int index) {
+    final Produto produtoParaRemover = _filteredProdutos[index];
+    final int originalIndex = produtos.indexOf(produtoParaRemover);
+
+    if (originalIndex == -1) return; // Produto não encontrado (deve ser raro)
+
+    if (produtos[originalIndex].quantidade > 1) {
+      // Se a quantidade for maior que 1, apenas dar baixa em uma unidade
+      darBaixaProduto(index);
+    } else {
+      // Se for a última unidade, perguntar se quer remover completamente
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Remover Produto?'),
+            content: Text('Tem certeza que deseja remover completamente "${produtoParaRemover.nome}" da sua despensa?'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Remover', style: TextStyle(color: Colors.white)),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _removerProdutoCompleto(originalIndex);
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   void darBaixaProduto(int index) {
@@ -374,27 +462,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (originalIndex != -1) {
       setState(() {
-        if (produtos[originalIndex].quantidade > 1) {
-          produtos[originalIndex].quantidade--;
-          _showSnackBar('Uma unidade de "${produtos[originalIndex].nome}" foi removida.');
-        } else {
-          produtos.removeAt(originalIndex);
-          _showSnackBar('"${produtoRemovido.nome}" foi removido da despensa.',
-              action: SnackBarAction(
-                label: 'Desfazer',
-                onPressed: () {
-                  setState(() {
-                    _loadProdutos();
-                  });
-                },
-              ));
-        }
+        produtos[originalIndex].quantidade--;
         _sortProdutos();
         _saveProdutos();
         _updateUniqueFilters();
         _applyFilters();
+        _showSnackBar('Uma unidade de "${produtos[originalIndex].nome}" foi removida.');
       });
     }
+  }
+
+  void _removerProdutoCompleto(int originalIndex) {
+    final Produto produtoRemovido = produtos[originalIndex];
+    setState(() {
+      produtos.removeAt(originalIndex);
+      _sortProdutos();
+      _saveProdutos();
+      _updateUniqueFilters();
+      _applyFilters();
+      _showSnackBar('"${produtoRemovido.nome}" foi removido da despensa.',
+          action: SnackBarAction(
+            label: 'Desfazer',
+            onPressed: () {
+              setState(() {
+                _loadProdutos(); // Recarrega do SharedPreferences para desfazer
+              });
+            },
+          ));
+    });
   }
 
   void adicionarUnidade(int index) {
@@ -516,16 +611,37 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
             ElevatedButton.icon(
-              onPressed: adicionarProduto,
-              icon: const Icon(Icons.add_shopping_cart, size: 20),
-              label: const Text('Adicionar Produto'),
+              onPressed: adicionarOuAtualizarProduto,
+              icon: Icon(_editingProduct != null ? Icons.save : Icons.add_shopping_cart, size: 20),
+              label: Text(_editingProduct != null ? 'Salvar Edição' : 'Adicionar Produto'),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(45),
+                backgroundColor: _editingProduct != null ? Theme.of(context).colorScheme.secondary : Theme.of(context).primaryColor,
               ),
             ),
+            if (_editingProduct != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _editingProduct = null;
+                      _editingProductIndex = null;
+                      nomeController.clear();
+                      validadeController.clear();
+                      quantidadeController.clear();
+                      categoriaController.clear();
+                      localArmazenamentoController.clear();
+                      _useCategory = false;
+                      _useLocation = false;
+                    });
+                  },
+                  child: Text('Cancelar Edição', style: TextStyle(color: Theme.of(context).primaryColor)),
+                ),
+              ),
             const SizedBox(height: 25),
 
-            // NOVO: BOTÃO PARA EXIBIR/ESCONDER FILTROS
+            // BOTÃO PARA EXIBIR/ESCONDER FILTROS
             ElevatedButton.icon(
               onPressed: () {
                 setState(() {
@@ -555,12 +671,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       prefixIcon: const Icon(Icons.search, size: 20),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                        icon: const Icon(Icons.clear, size: 20),
-                        onPressed: () {
-                          _searchController.clear();
-                          _applyFilters();
-                        },
-                      )
+                              icon: const Icon(Icons.clear, size: 20),
+                              onPressed: () {
+                                _searchController.clear();
+                                _applyFilters();
+                              },
+                            )
                           : null,
                     ),
                   ),
@@ -606,7 +722,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         // Dropdown para Categoria
-                        ConstrainedBox( // Limita a largura do dropdown
+                        ConstrainedBox(
+                          // Limita a largura do dropdown
                           constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width / 2 - 20), // Ajuste conforme necessário
                           child: DropdownButtonFormField<String>(
                             value: _selectedCategoryFilter ?? 'Todos',
@@ -631,7 +748,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         // Dropdown para Local de Armazenamento
-                        ConstrainedBox( // Limita a largura do dropdown
+                        ConstrainedBox(
+                          // Limita a largura do dropdown
                           constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width / 2 - 20), // Ajuste conforme necessário
                           child: DropdownButtonFormField<String>(
                             value: _selectedLocationFilter ?? 'Todos',
@@ -676,133 +794,183 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _filteredProdutos.isEmpty
                   ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _searchController.text.isEmpty && _selectedFilter == ProductFilter.all &&
-                          (_selectedCategoryFilter == null || _selectedCategoryFilter == 'Todos') &&
-                          (_selectedLocationFilter == null || _selectedLocationFilter == 'Todos')
-                          ? Icons.inbox_outlined
-                          : Icons.search_off,
-                      size: 70,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _searchController.text.isEmpty && _selectedFilter == ProductFilter.all &&
-                          (_selectedCategoryFilter == null || _selectedCategoryFilter == 'Todos') &&
-                          (_selectedLocationFilter == null || _selectedLocationFilter == 'Todos')
-                          ? 'Sua despensa está vazia!\nAdicione alguns produtos para começar.'
-                          : 'Nenhum produto encontrado com os filtros selecionados.',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              )
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _searchController.text.isEmpty &&
+                                    _selectedFilter == ProductFilter.all &&
+                                    (_selectedCategoryFilter == null || _selectedCategoryFilter == 'Todos') &&
+                                    (_selectedLocationFilter == null || _selectedLocationFilter == 'Todos')
+                                ? Icons.inbox_outlined
+                                : Icons.search_off,
+                            size: 70,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _searchController.text.isEmpty &&
+                                    _selectedFilter == ProductFilter.all &&
+                                    (_selectedCategoryFilter == null || _selectedCategoryFilter == 'Todos') &&
+                                    (_selectedLocationFilter == null || _selectedLocationFilter == 'Todos')
+                                ? 'Sua despensa está vazia!\nAdicione alguns produtos para começar.'
+                                : 'Nenhum produto encontrado com os filtros selecionados.',
+                            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
                   : ListView.builder(
-                itemCount: _filteredProdutos.length,
-                itemBuilder: (context, index) {
-                  final produto = _filteredProdutos[index];
-                  Color? cardColor;
-                  String statusText = '';
-                  Color? statusTextColor;
+                      itemCount: _filteredProdutos.length,
+                      itemBuilder: (context, index) {
+                        final produto = _filteredProdutos[index];
+                        Color? cardColor;
+                        String statusText = '';
+                        Color? statusTextColor;
+                        IconData statusIcon = Icons.check_circle_outline;
+                        Color statusIconColor = Colors.green;
 
-                  if (produto.isExpired) {
-                    cardColor = Colors.red[100];
-                    statusText = 'VENCIDO';
-                    statusTextColor = Colors.red[800];
-                  } else if (produto.pertoDoVencimento) {
-                    cardColor = Colors.orange[100];
-                    statusText = 'VENCE EM BREVE';
-                    statusTextColor = Colors.orange[800];
-                  } else {
-                    cardColor = Colors.white;
-                  }
+                        if (produto.isExpired) {
+                          cardColor = Colors.red[100];
+                          statusText = 'VENCIDO';
+                          statusTextColor = Colors.red[800];
+                          statusIcon = Icons.dangerous;
+                          statusIconColor = Colors.red;
+                        } else if (produto.pertoDoVencimento) {
+                          cardColor = Colors.orange[100];
+                          statusText = 'VENCE EM BREVE';
+                          statusTextColor = Colors.orange[800];
+                          statusIcon = Icons.warning_amber;
+                          statusIconColor = Colors.orange;
+                        } else {
+                          cardColor = Colors.white;
+                        }
 
-                  return Card(
-                    color: cardColor,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                      child: ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.teal[200],
-                            shape: BoxShape.circle,
+                        return Dismissible(
+                          key: Key(produto.nome + produto.validade.toIso8601String() + produto.quantidade.toString()),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            color: Colors.red,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: const Icon(Icons.delete, color: Colors.white, size: 30),
                           ),
-                          child: Text(
-                            produto.quantidade.toString(),
-                            style: TextStyle(
-                              color: Colors.teal[900],
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          produto.nome,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.teal[900],
-                            decoration: produto.isExpired ? TextDecoration.lineThrough : null,
-                            decorationThickness: 2,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 2),
-                            Text(
-                              'Validade: ${formatarData(produto.validade)}',
-                              style: TextStyle(color: Colors.grey[700], fontSize: 12),
-                            ),
-                            if (produto.categoria != null && produto.categoria!.isNotEmpty)
-                              Text(
-                                'Categoria: ${produto.categoria}',
-                                style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                              ),
-                            if (produto.localArmazenamento != null && produto.localArmazenamento!.isNotEmpty)
-                              Text(
-                                'Local: ${produto.localArmazenamento}',
-                                style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                              ),
-                            if (statusText.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 3.0),
-                                child: Text(
-                                  statusText,
-                                  style: TextStyle(
-                                    color: statusTextColor,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12,
+                          confirmDismiss: (direction) async {
+                            return await showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: const Text('Confirmar Exclusão'),
+                                  content: Text('Tem certeza que deseja excluir "${produto.nome}" completamente?'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(false),
+                                      child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () => Navigator.of(context).pop(true),
+                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                      child: const Text('Excluir', style: TextStyle(color: Colors.white)),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          onDismissed: (direction) {
+                            _removerProdutoCompleto(produtos.indexOf(produto));
+                          },
+                          child: Card(
+                            color: cardColor,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2.0),
+                              child: ListTile(
+                                onTap: () => _editProduto(produto), // Abre para edição ao tocar
+                                leading: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal[200],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    produto.quantidade.toString(),
+                                    style: TextStyle(
+                                      color: Colors.teal[900],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
+                                title: Text(
+                                  produto.nome,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.teal[900],
+                                    decoration: produto.isExpired ? TextDecoration.lineThrough : null,
+                                    decorationThickness: 2,
+                                  ),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Validade: ${formatarData(produto.validade)}',
+                                      style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                                    ),
+                                    if (produto.categoria != null && produto.categoria!.isNotEmpty)
+                                      Text(
+                                        'Categoria: ${produto.categoria}',
+                                        style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                                      ),
+                                    if (produto.localArmazenamento != null && produto.localArmazenamento!.isNotEmpty)
+                                      Text(
+                                        'Local: ${produto.localArmazenamento}',
+                                        style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                                      ),
+                                    if (statusText.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 3.0),
+                                        child: Row(
+                                          children: [
+                                            Icon(statusIcon, size: 16, color: statusIconColor),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              statusText,
+                                              style: TextStyle(
+                                                color: statusTextColor,
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.add_circle, color: Colors.teal[600], size: 28), // Ícone maior
+                                      onPressed: () => adicionarUnidade(index),
+                                      tooltip: 'Adicionar 1 unidade',
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.remove_circle, color: Colors.red[600], size: 28), // Ícone maior
+                                      onPressed: () => _confirmarBaixaOuExclusao(index),
+                                      tooltip: 'Remover 1 unidade ou produto',
+                                    ),
+                                  ],
+                                ),
                               ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.add_circle, color: Colors.teal[600], size: 26),
-                              onPressed: () => adicionarUnidade(index),
-                              tooltip: 'Adicionar 1 unidade',
                             ),
-                            IconButton(
-                              icon: Icon(Icons.remove_circle, color: Colors.red[600], size: 26),
-                              onPressed: () => darBaixaProduto(index),
-                              tooltip: 'Remover 1 unidade ou produto',
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
